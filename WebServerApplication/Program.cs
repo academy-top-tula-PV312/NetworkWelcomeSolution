@@ -79,7 +79,6 @@ app.MapPut("/api/employees", (Employee data) =>
     return Results.Json(employee);
 });
 
-
 // DELETE api/employees/id - delete
 app.MapDelete("/api/employees/{id:int}", (int id) =>
 {
@@ -92,6 +91,55 @@ app.MapDelete("/api/employees/{id:int}", (int id) =>
 });
 
 
+app.MapPost("/form", async (HttpContext context) =>
+{
+    var form = context.Request.Form;
+    string? name = form["name"];
+    string? age = form["age"];
+
+    await context.Response.WriteAsync($"Form data: Name: {name}, Age: {age}");
+});
+
+app.MapPost("/image", async (HttpContext context) =>
+{
+    var path = Directory.GetCurrentDirectory() + "/images";
+    Directory.CreateDirectory(path);
+
+    string fileName = Guid.NewGuid().ToString();
+
+    using(var stream = new FileStream($"{path}/{fileName}.jpg", FileMode.Create))
+    {
+        await context.Request.Body.CopyToAsync(stream);
+    }
+
+    await context.Response.WriteAsync($"file {fileName} save to server");
+});
+
+app.MapPost("/bytes", async (HttpContext context) =>
+{
+    using StreamReader reader = new StreamReader(context.Request.Body);
+    string text = await reader.ReadToEndAsync();
+    await context.Response.WriteAsync($"Client send text: {text}");
+});
+
+app.MapPost("/files", async (HttpContext context) =>
+{
+    var files = context.Request.Form.Files;
+
+    var path = Directory.GetCurrentDirectory() + "/files";
+    Directory.CreateDirectory(path);
+
+    foreach(var file in files)
+    {
+        string filePath = $"{path}/{file.FileName}";
+        using(var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+    }
+
+    await context.Response.WriteAsync("All files saved to server");
+});
 
 
 app.Run();
